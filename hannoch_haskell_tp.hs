@@ -32,7 +32,6 @@ obtCostoRep (Auto patente _ _ _ _)
 -- Usando únicamente Composición y aplicación parcial
 
 esPeligroso :: Auto -> Bool
--- esPeligroso (Auto patente desgasteLlantas _ _ _) = (>0.5) (head desgasteLlantas)
 esPeligroso = (>0.5) . head . desgasteLlantas
 
 necesitaRevision :: Auto -> Bool
@@ -61,17 +60,23 @@ lima auto = auto {desgasteLlantas = 0:0:drop 2 (desgasteLlantas auto)}
 
 
 -- -- Punto 4
--- usar recursividad
-desgasteAuto :: Auto -> Int
-desgasteAuto = round . (*10) .  sum . desgasteLlantas
+-- usar recursividad solamente
+-- desgasteAuto :: Auto -> Int
+-- desgasteAuto = round . (*10) .  sum . desgasteLlantas
+
+desgasteAuto' :: [Desgaste] -> Float -> Int
+desgasteAuto' [] suma =  round . (*10) $ suma
+desgasteAuto' (x:xs) suma = desgasteAuto' xs (x+suma)
+
 autosEstanOrdenados :: [Auto] -> Bool
 autosEstanOrdenados autos = ordenados autos 1
     where
         ordenados [] _ = True
         ordenados (x:xs) index
-            | odd index && even (desgasteAuto x) = False
-            | even index && odd (desgasteAuto x) = False
+            | odd index && even desgaste = False
+            | even index && odd desgaste = False
             | otherwise = ordenados xs (index + 1)
+            where desgaste = desgasteAuto' (desgasteLlantas x) 0
 
 
 
@@ -128,4 +133,3 @@ aplicacionInfDeTec tecnicos auto = takeWhile (==True) $ map (\x -> not . esPelig
 costosDeAutosAReparar' :: [Auto] -> Float
 costosDeAutosAReparar' autos = sum $ take 3 $ map obtCostoRep autosAReparar
     where autosAReparar = filter necesitaRevision autos
-
