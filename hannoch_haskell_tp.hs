@@ -22,9 +22,11 @@ obtCostoRep (Auto patente _ _ _ _)
     | length patente == 7 = 12500
     | patente >= "DJ" && patente <= "NB" = calculoPatental patente
     | otherwise = 15000
-        where calculoPatental patente
-               | last patente == '4' = (*3000) . fromIntegral . length $ patente
-               | otherwise = 20000
+
+calculoPatental :: Patente -> Float
+calculoPatental patente
+    | last patente == '4' = (*3000) . fromIntegral . length $ patente
+    | otherwise = 20000
 
  
 
@@ -64,26 +66,37 @@ lima auto = auto {desgasteLlantas = 0:0:drop 2 (desgasteLlantas auto)}
 -- desgasteAuto :: Auto -> Int
 -- desgasteAuto = round . (*10) .  sum . desgasteLlantas
 
+autosEstanOrdenados :: [Auto] -> Bool
+autosEstanOrdenados autos = ordenados autos 1
+
+ordenados :: [Auto] -> Int -> Bool
+ordenados [] _ = True
+ordenados (x:xs) index = ordenados xs (index + 1) && not (cumpleCriterio x index)
+
+cumpleCriterio :: Auto -> Int -> Bool
+cumpleCriterio auto index = mod index 2 /= mod (desgaste auto) 2
+
+desgaste :: Auto -> Int
+desgaste auto = desgasteAuto' (desgasteLlantas auto) 0
+
 desgasteAuto' :: [Desgaste] -> Float -> Int
 desgasteAuto' [] suma =  round . (*10) $ suma
 desgasteAuto' (x:xs) suma = desgasteAuto' xs (x+suma)
 
-autosEstanOrdenados :: [Auto] -> Bool
-autosEstanOrdenados autos = ordenados autos 1
-    where
-        ordenados [] _ = True
-        ordenados (x:xs) index
-            | odd index && even desgaste = False
-            | even index && odd desgaste = False
-            | otherwise = ordenados xs (index + 1)
-            where desgaste = desgasteAuto' (desgasteLlantas x) 0
-
-
 
 -- -- Punto 5
+-- ordenDeReparacion :: [Tecnico] -> Fecha -> Auto -> Auto
+-- ordenDeReparacion [] fecha auto = auto {ultimoArreglo = fecha}
+-- ordenDeReparacion (x:xs) fecha auto = ordenDeReparacion xs fecha (x auto)
+
+
 ordenDeReparacion :: [Tecnico] -> Fecha -> Auto -> Auto
-ordenDeReparacion [] fecha auto = auto {ultimoArreglo = fecha}
-ordenDeReparacion (x:xs) fecha auto = ordenDeReparacion xs fecha (x auto)
+ordenDeReparacion tecnicos fechaModificacion auto = (aplicarTecnicos tecnicos auto) {ultimoArreglo = fechaModificacion}
+
+aplicarTecnicos :: [Tecnico] -> Auto -> Auto
+aplicarTecnicos tecnicos auto = foldl (\autoAcc tecnico -> tecnico autoAcc) auto tecnicos
+
+
 
 
 
@@ -93,8 +106,10 @@ listaDeBuenosTecnicos :: [Tecnico] -> Auto -> [Tecnico]
 listaDeBuenosTecnicos tecnicos auto = filter (\x -> not . esPeligroso . x $ auto) tecnicos
 
 costosDeAutosAReparar :: [Auto] -> Float
-costosDeAutosAReparar autos = foldl (\acc auto-> acc + obtCostoRep auto) 0 autosAReparar
-    where autosAReparar = filter necesitaRevision autos
+costosDeAutosAReparar autos = foldl (\acc auto-> acc + obtCostoRep auto) 0 (autosAReparar autos)
+
+autosAReparar :: [Auto] -> [Auto]
+autosAReparar = filter necesitaRevision
 
 
 
