@@ -63,8 +63,6 @@ lima auto = auto {desgasteLlantas = 0:0:drop 2 (desgasteLlantas auto)}
 
 -- -- Punto 4
 -- usar recursividad solamente
--- desgasteAuto :: Auto -> Int
--- desgasteAuto = round . (*10) .  sum . desgasteLlantas
 
 autosEstanOrdenados :: [Auto] -> Bool
 autosEstanOrdenados autos = ordenados autos 1
@@ -77,11 +75,11 @@ cumpleCriterio :: Auto -> Int -> Bool
 cumpleCriterio auto index = mod index 2 /= mod (desgaste auto) 2
 
 desgaste :: Auto -> Int
-desgaste auto = desgasteAuto' (desgasteLlantas auto) 0
+desgaste auto = calcDesgasteTotLlantas' (desgasteLlantas auto) 0
 
-desgasteAuto' :: [Desgaste] -> Float -> Int
-desgasteAuto' [] suma =  round . (*10) $ suma
-desgasteAuto' (x:xs) suma = desgasteAuto' xs (x+suma)
+calcDesgasteTotLlantas' :: [Desgaste] -> Float -> Int
+calcDesgasteTotLlantas' [] suma =  round . (*10) $ suma
+calcDesgasteTotLlantas' (x:xs) suma = calcDesgasteTotLlantas' xs (x+suma)
 
 
 -- -- Punto 5
@@ -119,15 +117,16 @@ autosAReparar = filter necesitaRevision
 tecnicosInfinitos :: [Tecnico]
 tecnicosInfinitos = zulu:tecnicosInfinitos
 autosInfinitos :: [Auto]
-autosInfinitos = autosInfinitos' 0
-autosInfinitos' :: Int -> [Auto]
-autosInfinitos' n = Auto {
+autosInfinitos = generarAutosInfinitos' 0
+
+generarAutosInfinitos' :: Int -> [Auto]
+generarAutosInfinitos' n = Auto {
     patente = "AAA000",
     desgasteLlantas = [fromIntegral n, 0, 0, 0.3],
     rpm = 1500 + n,
     temperaturaAgua = 90,
     ultimoArreglo = (20, 1, 2013)
-} : autosInfinitos' (n + 1)
+} : generarAutosInfinitos' (n + 1)
 
 
 -- A) En base al punto “dada una lista de técnicos determinar qué técnicos dejarían el auto en condiciones” y considerando una lista de técnicos infinita,¿podríamos obtener el primer técnico que deja el auto en condiciones? Muestre un ejemplo y justifique.
@@ -146,5 +145,9 @@ aplicacionInfDeTec tecnicos auto = takeWhile (==True) $ map (\x -> not . esPelig
 -- B) Si quisiéramos obtener el costo total de los autos que necesitacen revisión, es decir de principio a fin, no sería posible, puesto que la lista nunca terminaría. No obstante, si la listas es infinita, pero tomamos un número finito de autos que encontramos a medida que vamos evaluando los términos, por ejemplo 3, en ese caso sí podríamos saber el costo de reparación total (sumando los tres autos). Esta versión si aceptaría una lista infinita de autos, pero la cantidad de términos evaluados siempre será finita.
 
 costosDeAutosAReparar' :: [Auto] -> Float
-costosDeAutosAReparar' autos = sum $ take 3 $ map obtCostoRep autosAReparar
-    where autosAReparar = filter necesitaRevision autos
+costosDeAutosAReparar' autos = sum . take 3 $ costoDeConjFinitoDeAutosAReparar autos
+
+costoDeConjFinitoDeAutosAReparar :: [Auto] -> [Float]
+costoDeConjFinitoDeAutosAReparar = map obtCostoRep . filter necesitaRevision
+
+
